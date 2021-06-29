@@ -1,8 +1,11 @@
 package it.polito.tdp.artsmia;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.artsmia.model.Artist;
+import it.polito.tdp.artsmia.model.Connessioni;
 import it.polito.tdp.artsmia.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -31,7 +34,7 @@ public class FXMLController {
     private Button btnCalcolaPercorso;
 
     @FXML
-    private ComboBox<?> boxRuolo;
+    private ComboBox<String> boxRuolo;
 
     @FXML
     private TextField txtArtista;
@@ -41,17 +44,66 @@ public class FXMLController {
 
     @FXML
     void doArtistiConnessi(ActionEvent event) {
+    	this.txtResult.clear();
+    	
+    	String ruolo = this.boxRuolo.getValue();
+    	if(!ruolo.equals(this.model.getRuolo())) {
+    		this.txtResult.appendText("Devi prima creare un nuovo GRAFO!!");
+    		return;
+    	}
 
+    	List<Connessioni> result = this.model.getConnessioni();
+    	
+    	this.txtResult.appendText("Artisti connessi: \n\n");
+    	Integer i = 1;
+    	for(Connessioni c : result) {
+    		this.txtResult.appendText(""+i+". "+c.toString());
+    		i++;
+    	}
     }
 
     @FXML
     void doCalcolaPercorso(ActionEvent event) {
+    	this.txtResult.clear();
+    	
+    	Integer ID;
+    	try {
+    		ID = Integer.parseInt(this.txtArtista.getText());
+    	}
+    	catch(NumberFormatException e) {
+    		this.txtResult.appendText("Devi inserire un numero INTERO!!");
+    		return;
+    	}
+    	
+    	if(!this.model.IDPresente(ID)) {
+    		this.txtResult.appendText("L'artista inserito non esiste o non fa parte del grafo, inserisci un altro ID");
+    		return;
+    	}
+    	
+    	this.model.trovaPercorso(ID);
+    	List<Artist> percorsoBest = this.model.getPercorsoBest();
+    	Integer peso = this.model.getNumEsposizioniCondivise();
 
+    	this.txtResult.appendText("Percorso migliore trovato per "+peso+" esposizioni condivise: \n\n");
+    	for(Artist a : percorsoBest) 
+    		this.txtResult.appendText("- "+a.toString()+" \n");
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
+    	this.txtResult.clear();
+    	
+    	String ruolo = this.boxRuolo.getValue();
+    	if(ruolo==null) {
+    		this.txtResult.appendText("Devi prima scegliere un RUOLO!!");
+    		return;
+    	}
+    	
+    	String result = this.model.creaGrafo(ruolo);
+    	this.txtResult.appendText(result);
 
+    	this.btnArtistiConnessi.setDisable(false);
+    	this.btnCalcolaPercorso.setDisable(false);
     }
 
     @FXML
@@ -67,6 +119,8 @@ public class FXMLController {
 
 	public void setModel(Model model) {
 		this.model = model;
+		
+		this.boxRuolo.getItems().addAll(this.model.getAllRoles());
 	}
 }
 
